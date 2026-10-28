@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8f6">
+    <meta name="description" content="Konversi mata uang fiat dan crypto dengan kurs referensi terbaru.">
+    <title>Konversi Mata Uang</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" href="/" aria-label="Konversi mata uang, beranda">
+            <span class="brand-mark" aria-hidden="true">K</span>
+            <span>konversi<span class="brand-light">.uang</span></span>
+        </a>
+        <div class="topbar-actions">
+            <span class="update-status"><span class="status-dot"></span> Crypto <strong id="ratesUpdatedAt">Memuat…</strong></span>
+            <button id="refreshRates" class="button button-quiet" type="button" aria-label="Perbarui kurs sekarang">Perbarui kurs</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="intro">
+            <p class="eyebrow">KONVERTER MATA UANG</p>
+            <h1>Nilai tukar, lebih sederhana.</h1>
+            <p class="intro-copy">Konversi mata uang fiat dan crypto dengan kurs referensi terbaru.</p>
+        </section>
+
+        <div id="pageNotice" class="notice is-hidden" role="status"></div>
+
+        <div class="content-grid">
+            <section class="panel converter-panel" aria-labelledby="converterTitle">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">KONVERSI</p>
+                        <h2 id="converterTitle">Hitung nilai</h2>
+                    </div>
+                    <span class="panel-icon" aria-hidden="true">↗</span>
+                </div>
+
+                <form id="convertForm" novalidate>
+                    <label class="field-label" for="amount">Jumlah</label>
+                    <div class="amount-wrap">
+                        <input id="amount" type="number" min="0.00000001" step="any" inputmode="decimal" placeholder="0,00" required>
+                        <span class="amount-hint">Masukkan jumlah</span>
+                    </div>
+
+                    <div class="currency-fields">
+                        <div class="field-group">
+                            <label class="field-label" for="from">Dari</label>
+                            <select id="from" required aria-label="Mata uang asal">
+                                <option value="">Pilih mata uang</option>
+                            </select>
+                        </div>
+                        <button id="swapBtn" class="swap-button" type="button" aria-label="Tukar mata uang">↕</button>
+                        <div class="field-group">
+                            <label class="field-label" for="to">Ke</label>
+                            <select id="to" required aria-label="Mata uang tujuan">
+                                <option value="">Pilih mata uang</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <output id="conversionPreview" class="conversion-preview" aria-live="polite"></output>
+                    <button id="submitBtn" class="button button-primary convert-button" type="submit">Konversi <span aria-hidden="true">→</span></button>
+                    <div id="message" class="message" aria-live="polite"></div>
+                </form>
+                <p class="source-note">Fiat: <a id="fiatSource" href="https://exchangerate.fun/" target="_blank" rel="noopener">ExchangeRate.fun</a> · <span id="fiatUpdatedAt">Memuat kurs…</span>. Crypto: CoinGecko.</p>
+            </section>
+
+            <section class="panel market-panel" aria-labelledby="marketTitle">
+                <div class="panel-heading market-heading">
+                    <div>
+                        <p class="eyebrow">PASAR CRYPTO</p>
+                        <h2 id="marketTitle">Harga dalam USD</h2>
+                    </div>
+                    <span class="market-time" id="cryptoUpdatedAt">—</span>
+                </div>
+
+                <ul class="crypto-list" id="cryptoList">
+                    <li class="crypto-item" data-id="bitcoin"><span class="coin-avatar coin-bitcoin" aria-hidden="true">B</span><span class="coin-name"><strong>Bitcoin</strong><small>BITCOIN</small></span><strong class="price" data-id="bitcoin">—</strong></li>
+                    <li class="crypto-item" data-id="ethereum"><span class="coin-avatar coin-ethereum" aria-hidden="true">E</span><span class="coin-name"><strong>Ethereum</strong><small>ETHEREUM</small></span><strong class="price" data-id="ethereum">—</strong></li>
+                    <li class="crypto-item" data-id="tether"><span class="coin-avatar coin-tether" aria-hidden="true">T</span><span class="coin-name"><strong>Tether</strong><small>TETHER</small></span><strong class="price" data-id="tether">—</strong></li>
+                    <li class="crypto-item" data-id="binancecoin"><span class="coin-avatar coin-binancecoin" aria-hidden="true">B</span><span class="coin-name"><strong>Binance Coin</strong><small>BINANCECOIN</small></span><strong class="price" data-id="binancecoin">—</strong></li>
+                    <li class="crypto-item" data-id="usd-coin"><span class="coin-avatar coin-usd-coin" aria-hidden="true">U</span><span class="coin-name"><strong>USD Coin</strong><small>USD-COIN</small></span><strong class="price" data-id="usd-coin">—</strong></li>
+                </ul>
+
+                <div class="chart-heading">
+                    <h3>Pergerakan harga</h3>
+                    <div class="chart-controls">
+                        <label class="visually-hidden" for="chartCoin">Pilih crypto</label>
+                        <select id="chartCoin" aria-label="Pilih crypto untuk grafik">
+                            <option value="bitcoin">Bitcoin</option>
+                            <option value="ethereum">Ethereum</option>
+                            <option value="tether">Tether</option>
+                            <option value="binancecoin">Binance Coin</option>
+                            <option value="usd-coin">USD Coin</option>
+                        </select>
+                        <label class="visually-hidden" for="chartDays">Rentang grafik</label>
+                        <select id="chartDays" aria-label="Rentang grafik">
+                            <option value="1">1 hari</option>
+                            <option value="7" selected>7 hari</option>
+                            <option value="30">30 hari</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-wrap"><canvas id="priceChart" aria-label="Grafik perubahan harga crypto"></canvas></div>
+            </section>
+
+            <section class="panel history-panel" aria-labelledby="historyTitle">
+                <div class="panel-heading history-heading">
+                    <div>
+                        <p class="eyebrow">AKTIVITAS</p>
+                        <h2 id="historyTitle">Riwayat konversi</h2>
+                        <p class="history-storage-note">Tersimpan di browser ini.</p>
+                    </div>
+                    <div class="history-actions">
+                        <button id="exportCsv" class="button button-quiet" type="button">Unduh CSV</button>
+                        <button id="clearAll" class="button button-quiet button-danger" type="button">Hapus semua</button>
+                    </div>
+                </div>
+                <div class="table-scroll" role="region" aria-label="Tabel riwayat konversi" tabindex="0">
+                    <table id="historyTable">
+                        <thead>
+                        <tr><th>Waktu</th><th>Jumlah</th><th>Dari</th><th>Ke</th><th>Hasil</th><th><span class="visually-hidden">Aksi</span></th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <p class="empty-history" id="emptyHistory">Belum ada konversi.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer class="footer-note">Kurs merupakan nilai referensi dan dapat berubah. Data crypto diperiksa setiap menit.</footer>
+</div>
+</body>
+</html>
