@@ -24,14 +24,35 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
 
+    if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(405).json({ success: false, error: 'Metode permintaan tidak diizinkan.' });
+        return;
+    }
+    if (Object.keys(req.query || {}).length > 0) {
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(400).json({ success: false, error: 'Parameter permintaan tidak dikenal.' });
+        return;
+    }
+
     try {
         const response = await fetch('https://api.frankfurter.app/currencies', {
             headers: { Accept: 'application/json' },
             signal: AbortSignal.timeout(4000),
         });
         if (!response.ok) throw new Error(`Provider returned ${response.status}`);
-        const currencies = await response.json();
-        if (!currencies || typeof currencies !== 'object' || Array.isArray(currencies)) throw new Error('Invalid currency list');
+        const payload = await response.json();
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Invalid currency list');
+
+        const currencies = {};
+        for (const [rawCode, rawName] of Object.entries(payload).slice(0, 500)) {
+            const code = rawCode.toUpperCase();
+            if (/^[A-Z]{3}$/.test(code) && typeof rawName === 'string') {
+                currencies[code] = rawName.slice(0, 100);
+            }
+        }
+        if (!Object.keys(currencies).length) throw new Error('Empty currency list');
         res.status(200).json({ success: true, currencies });
     } catch (error) {
         res.status(200).json({ success: true, currencies: fallbackCurrencies, fallback: true });

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['binancecoin', 'Binance Coin'],
         ['usd-coin', 'USD Coin'],
     ];
+    const cryptoIds = new Set(cryptoCoins.map(([id]) => id));
     const fallbackCurrencies = {
         AUD: 'Australian dollar', BRL: 'Brazilian real', CAD: 'Canadian dollar', CHF: 'Swiss franc',
         CNY: 'Chinese yuan', EUR: 'Euro', GBP: 'British pound', HKD: 'Hong Kong dollar',
@@ -69,6 +70,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return Number.isFinite(number)
             ? number.toLocaleString('id-ID', { minimumFractionDigits: min, maximumFractionDigits: max })
             : '—';
+    }
+
+    function formatAmount(value, currency) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return '—';
+
+        if (cryptoIds.has(String(currency).toLowerCase())) {
+            return number.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 12 });
+        }
+
+        try {
+            const digits = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: String(currency).toUpperCase(),
+            }).resolvedOptions().maximumFractionDigits;
+            return number.toLocaleString('id-ID', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+        } catch (error) {
+            return fmtNumber(number, 2, 4);
+        }
     }
 
     function setMessage(text, type = '') {
@@ -158,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!preview) return;
         const value = Number(amount.value);
         if (!amount.value || !Number.isFinite(value) || value <= 0 || !from.value || !to.value) {
-            preview.textContent = '';
+            preview.replaceChildren();
             preview.classList.remove('has-value');
             return;
         }
@@ -174,7 +194,26 @@ document.addEventListener('DOMContentLoaded', () => {
             preview.classList.remove('has-value');
             return;
         }
-        preview.textContent = `${fmtNumber(value)} ${from.value.toUpperCase()} = ${fmtNumber(result)} ${to.value.toUpperCase()}`;
+
+        const caption = document.createElement('span');
+        caption.className = 'preview-caption';
+        caption.textContent = 'Perkiraan hasil';
+
+        const resultLine = document.createElement('span');
+        resultLine.className = 'preview-result-line';
+        const resultAmount = document.createElement('strong');
+        resultAmount.className = 'preview-amount';
+        resultAmount.textContent = formatAmount(result, to.value);
+        const resultCode = document.createElement('span');
+        resultCode.className = 'preview-code';
+        resultCode.textContent = to.value.toUpperCase();
+        resultLine.append(resultAmount, resultCode);
+
+        const equation = document.createElement('span');
+        equation.className = 'preview-equation';
+        equation.textContent = `${formatAmount(value, from.value)} ${from.value.toUpperCase()} dikonversi`;
+
+        preview.replaceChildren(caption, resultLine, equation);
         preview.classList.add('has-value');
     }
 
@@ -192,10 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.dataset.id = item.id;
             addCell(row, item.waktu || '');
-            addCell(row, fmtNumber(item.jumlah));
+            const amountCell = addCell(row, formatAmount(item.jumlah, item.dari));
+            amountCell.classList.add('numeric-cell');
             addCell(row, `${String(item.dari || '').toUpperCase()} ${item.simbol_dari || ''}`.trim());
             addCell(row, `${String(item.ke || '').toUpperCase()} ${item.simbol_ke || ''}`.trim());
-            addCell(row, fmtNumber(item.hasil_numeric));
+            const resultCell = addCell(row, formatAmount(item.hasil_numeric, item.ke));
+            resultCell.classList.add('numeric-cell', 'history-result');
             const action = addCell(row, '');
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
@@ -306,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
             history = [item, ...history].slice(0, MAX_HISTORY);
             const persisted = saveHistory();
             renderHistory();
-            setMessage(`${fmtNumber(value)} ${item.dari.toUpperCase()} = ${fmtNumber(result)} ${item.ke.toUpperCase()}`, 'success');
+            setMessage('Hasil konversi ditampilkan di atas dan disimpan ke riwayat.', 'success');
             if (!persisted) showNotice('Konversi berhasil, tetapi riwayat browser tidak tersimpan.', 'error');
         });
     }
@@ -351,7 +392,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ['waktu', 'jumlah', 'dari', 'simbol_dari', 'ke', 'simbol_ke', 'hasil'],
                 ...history.map((item) => [item.waktu, item.jumlah, item.dari, item.simbol_dari, item.ke, item.simbol_ke, item.hasil_numeric]),
             ];
-            const csv = rows.map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\r\n');
+            const csv = rows.map((row) => row.map((value) => {
+                let text = String(value ?? '');
+                if (typeof value === 'string' && /^[\t\r\n ]*[=+@-]/.test(text)) text = `'${text}`;
+                return `"${text.replaceAll('"', '""')}"`;
+            }).join(',')).join('\r\n');
             const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');

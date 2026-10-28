@@ -110,10 +110,15 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .button-primary:hover { background: var(--green-dark); }
 .button-danger { color: var(--red); }
 .conversion-preview { display: block; min-height: 0; margin-top: 13px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-.conversion-preview.has-value { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-muted); color: var(--green-dark); font-size: 13px; font-weight: 600; }
+.conversion-preview.has-value { display: grid; gap: 5px; padding: 14px 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-muted); color: var(--green-dark); }
+.preview-caption { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.preview-result-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 9px; min-width: 0; }
+.preview-amount { max-width: 100%; color: var(--ink); font-size: clamp(23px, 4vw, 30px); font-weight: 650; letter-spacing: -.045em; line-height: 1.15; overflow-wrap: anywhere; }
+.preview-code { color: var(--green); font-size: 12px; font-weight: 700; }
+.preview-equation { color: var(--muted); font-size: 11px; }
 .convert-button { width: 100%; margin-top: 20px; font-size: 13px; }
 .convert-button span { font-size: 17px; }
-.message { min-height: 20px; margin-top: 12px; color: var(--muted); font-size: 12px; text-align: center; overflow-wrap: anywhere; }
+.message { min-height: 20px; margin-top: 12px; color: var(--muted); font-size: 11px; text-align: center; overflow-wrap: anywhere; }
 .message-success { color: var(--green); }
 .message-error { color: var(--red); }
 .source-note { margin: 11px 0 0; color: #9aa29c; font-size: 10px; }
@@ -146,6 +151,8 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
 thead th { padding: 12px 14px 10px; color: var(--muted); font-size: 10px; font-weight: 600; }
 tbody td { padding: 13px 14px; border-top: 1px solid #f0f2ef; color: #4d5851; font-size: 11px; font-variant-numeric: tabular-nums; }
+tbody td.numeric-cell { text-align: right; }
+tbody td.history-result { color: var(--green-dark); font-weight: 650; }
 tbody tr:hover { background: #fafbf9; }
 .button-row-delete { min-height: 28px; padding: 0 9px; border-color: var(--line); background: white; color: #78827b; font-size: 10px; }
 .button-row-delete:hover { border-color: #e7c9c9; color: var(--red); }
