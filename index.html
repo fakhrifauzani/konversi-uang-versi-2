@@ -45,8 +45,8 @@
                 <form id="convertForm" novalidate>
                     <label class="field-label" for="amount">Jumlah</label>
                     <div class="amount-wrap">
-                        <input id="amount" type="number" min="0.00000001" step="any" inputmode="decimal" placeholder="0,00" required>
-                        <span class="amount-hint">Masukkan jumlah</span>
+                        <input id="amount" type="text" inputmode="decimal" maxlength="40" autocomplete="off" spellcheck="false" placeholder="0,00" aria-describedby="amountHint" required>
+                        <span id="amountHint" class="amount-hint">Desimal: koma</span>
                     </div>
 
                     <div class="currency-fields">

@@ -91,6 +91,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function parseAmount(value) {
+        const raw = String(value ?? '').trim();
+        if (!raw) return NaN;
+
+        const negative = raw.startsWith('-');
+        const cleaned = raw.replace(/[^\d,]/g, '');
+        const decimalIndex = cleaned.indexOf(',');
+        const integerDigits = (decimalIndex >= 0 ? cleaned.slice(0, decimalIndex) : cleaned).replaceAll(',', '');
+        const fractionDigits = decimalIndex >= 0 ? cleaned.slice(decimalIndex + 1).replaceAll(',', '') : '';
+        if (!integerDigits && !fractionDigits) return NaN;
+
+        const normalized = `${negative ? '-' : ''}${integerDigits || '0'}${decimalIndex >= 0 ? `.${fractionDigits}` : ''}`;
+        return Number(normalized);
+    }
+
+    function formatAmountInput() {
+        if (!amount) return;
+        const raw = amount.value;
+        const cursor = amount.selectionStart ?? raw.length;
+        const digitsBeforeCursor = (raw.slice(0, cursor).match(/\d/g) || []).length;
+        const commaBeforeCursor = raw.slice(0, cursor).includes(',');
+        const negative = raw.trimStart().startsWith('-');
+        const cleaned = raw.replace(/[^\d,]/g, '');
+        const decimalIndex = cleaned.indexOf(',');
+        const integerDigits = (decimalIndex >= 0 ? cleaned.slice(0, decimalIndex) : cleaned).replaceAll(',', '');
+        const fractionDigits = decimalIndex >= 0 ? cleaned.slice(decimalIndex + 1).replaceAll(',', '') : '';
+        const normalizedInteger = integerDigits.replace(/^0+(?=\d)/, '');
+        const integer = normalizedInteger || (decimalIndex >= 0 ? '0' : '');
+        const groupedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        const formatted = `${negative ? '-' : ''}${groupedInteger}${decimalIndex >= 0 ? `,${fractionDigits}` : ''}`;
+
+        amount.value = formatted;
+        let nextCursor = 0;
+        let seenDigits = 0;
+        for (let index = 0; index < formatted.length; index += 1) {
+            if (/\d/.test(formatted[index])) {
+                seenDigits += 1;
+                if (seenDigits <= digitsBeforeCursor) nextCursor = index + 1;
+            }
+        }
+        if (digitsBeforeCursor === 0) nextCursor = raw.slice(0, cursor).trimStart().startsWith('-') ? 1 : 0;
+        if (commaBeforeCursor) {
+            const formattedComma = formatted.indexOf(',');
+            if (formattedComma >= 0) nextCursor = Math.max(nextCursor, formattedComma + 1);
+        }
+        amount.setSelectionRange(nextCursor, nextCursor);
+    }
+
     function setMessage(text, type = '') {
         if (!message) return;
         message.textContent = text;
@@ -176,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePreview() {
         if (!preview) return;
-        const value = Number(amount.value);
+        const value = parseAmount(amount.value);
         if (!amount.value || !Number.isFinite(value) || value <= 0 || !from.value || !to.value) {
             preview.replaceChildren();
             preview.classList.remove('has-value');
@@ -309,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             setMessage('');
-            const value = Number(amount.value);
+            const value = parseAmount(amount.value);
             if (!amount.value || !Number.isFinite(value) || value <= 0) {
                 setMessage('Masukkan jumlah yang lebih besar dari 0.', 'error');
                 amount.focus();
@@ -359,7 +407,10 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePreview();
         });
     }
-    if (amount) amount.addEventListener('input', updatePreview);
+    if (amount) amount.addEventListener('input', () => {
+        formatAmountInput();
+        updatePreview();
+    });
     if (from) from.addEventListener('change', updatePreview);
     if (to) to.addEventListener('change', updatePreview);
     if (refreshButton) refreshButton.addEventListener('click', () => updateRates(true));
